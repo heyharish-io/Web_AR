@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101114" />
+  <title>WebAR Poster Experience</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://aframe.io" />
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; color: #f6f5f2; }
+    body > video { z-index: 0 !important; pointer-events: none; }
+    a-scene { position: fixed; inset: 0; z-index: 1; background: transparent !important; }
+    a-scene canvas { background: transparent !important; }
+    .panel { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 50% 15%, rgba(255,202,5,.105), transparent 38%), radial-gradient(ellipse at 50% 45%, rgba(40,43,50,.78), rgba(12,13,15,.98) 74%); }
+    .card { position: relative; width: min(100%, 468px); overflow: hidden; padding: 32px; border: 1px solid rgba(255,202,5,.19); border-radius: 27px; background: linear-gradient(145deg, rgba(29,30,34,.97), rgba(17,18,21,.97)); box-shadow: 0 28px 90px rgba(0,0,0,.48), 0 0 42px rgba(255,202,5,.065); backdrop-filter: blur(18px); text-align: left; }
+    .welcome-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 28px; }
+    .welcome-mark { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border-radius: 13px; background: linear-gradient(145deg, #ffe16a, #ffbf00); color: #171717; font-size: 1.1rem; font-weight: 950; box-shadow: 0 5px 20px rgba(255,202,5,.2); }
+    .welcome-brand-text { min-width: 0; }
+    .eyebrow { margin: 0 0 4px; color: #fff; font-size: .72rem; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
+    .welcome-subbrand { margin: 0; color: #a4a6ad; font-size: .58rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .welcome-pill { margin-left: auto; padding: 7px 9px; border: 1px solid rgba(255,202,5,.3); border-radius: 999px; color: #ffdc56; font-size: .54rem; font-weight: 850; letter-spacing: .08em; }
+    h1 { margin: 0; font-size: clamp(2.1rem, 8vw, 3rem); line-height: .99; letter-spacing: -.055em; }
+    .headline-accent { color: #ffca05; }
+    .copy { max-width: 390px; margin: 15px 0 21px; color: #c4c5ca; font-size: .96rem; line-height: 1.55; }
+    .welcome-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 20px; }
+    .welcome-step { min-width: 0; padding: 9px 9px 10px; border: 1px solid rgba(255,255,255,.075); border-radius: 11px; background: rgba(255,255,255,.035); }
+    .welcome-step span { display: block; margin-bottom: 4px; color: #ffdc56; font-size: .57rem; font-weight: 900; letter-spacing: .1em; }
+    .welcome-step strong { display: block; color: #e8e8eb; font-size: .62rem; line-height: 1.25; }
+    .welcome-start { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-radius: 13px; background: linear-gradient(105deg, #ffca05, #ffe36a); box-shadow: 0 8px 24px rgba(255,202,5,.18); transition: transform .18s ease, box-shadow .18s ease; }
+    .welcome-start:hover { transform: translateY(-1px); box-shadow: 0 11px 28px rgba(255,202,5,.25); }
+    .welcome-start-arrow { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 9px; background: rgba(20,20,20,.11); font-size: 1.05rem; }
+    .privacy { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: #898b92; font-size: .72rem; line-height: 1.45; }
+    .privacy-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #ffca05; box-shadow: 0 0 10px rgba(255,202,5,.5); }
+    @media (max-width: 420px) { .panel { padding: 16px; } .card { padding: 25px 20px; border-radius: 23px; } .welcome-brand { margin-bottom: 24px; } .welcome-step { padding: 8px 7px; } .welcome-step strong { font-size: .58rem; } }
+    button { appearance: none; width: 100%; min-height: 54px; border: 0; border-radius: 14px; background: #ffca05; color: #151515; font: inherit; font-weight: 800; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .7; }
+    .privacy { margin: 14px 0 0; color: #898b92; font-size: .78rem; line-height: 1.45; }
+    #scanner { position: fixed; z-index: 4; top: max(18px, env(safe-area-inset-top)); left: 50%; width: max-content; max-width: calc(100% - 32px); transform: translateX(-50%); padding: 11px 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: rgba(15,16,19,.78); color: white; font-size: .9rem; text-align: center; backdrop-filter: blur(12px); }
+    #tap-hint { position: fixed; z-index: 4; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 10px 15px; border-radius: 999px; background: rgba(15,16,19,.78); color: #fff; font-size: .84rem; text-align: center; }
+    #maya-card { position: fixed; z-index: 4; left: max(16px, env(safe-area-inset-left)); bottom: max(82px, calc(env(safe-area-inset-bottom) + 74px)); width: min(330px, calc(100% - 32px)); max-height: min(560px, calc(100dvh - 104px)); overflow-x: hidden; overflow-y: auto; border: 1px solid rgba(255,255,255,.2); border-radius: 20px; background: linear-gradient(145deg, rgba(27,29,34,.97), rgba(14,15,18,.95)); box-shadow: 0 18px 54px rgba(0,0,0,.42); backdrop-filter: blur(16px); }
+    #maya-card::before { display: block; height: 4px; background: linear-gradient(90deg, #ffca05, #ffe98a 55%, #ffca05); content: ""; }
+    .maya-id-header { display: flex; align-items: center; gap: 10px; padding: 13px 15px 10px; border-bottom: 1px solid rgba(255,255,255,.09); }
+    .maya-id-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 10px; background: #ffca05; color: #171717; font-size: 1rem; font-weight: 900; }
+    .maya-id-brand { min-width: 0; flex: 1; }
+    .maya-id-company { margin: 0; color: #fff; font-size: .74rem; font-weight: 850; letter-spacing: .12em; }
+    .maya-id-label { margin: 3px 0 0; color: #9699a1; font-size: .58rem; font-weight: 700; letter-spacing: .12em; }
+    .maya-id-status { padding: 5px 8px; border: 1px solid rgba(255,202,5,.3); border-radius: 999px; color: #ffdc56; font-size: .56rem; font-weight: 800; letter-spacing: .08em; }
+    .maya-id-main { display: flex; align-items: center; gap: 12px; padding: 14px 15px 12px; }
+    .maya-id-avatar { display: grid; width: 54px; height: 54px; flex: 0 0 54px; place-items: center; border: 1px solid rgba(255,202,5,.55); border-radius: 16px; background: linear-gradient(145deg, rgba(255,202,5,.2), rgba(255,202,5,.06)); color: #ffe27a; font-size: 1.08rem; font-weight: 850; letter-spacing: .04em; }
+    .maya-id-name { margin: 0; color: #fff; font-size: 1.3rem; line-height: 1.1; letter-spacing: -.025em; }
+    .maya-id-role { margin: 5px 0 0; color: #c9cbd1; font-size: .75rem; font-weight: 650; }
+    .maya-id-details { display: grid; grid-template-columns: .55fr 1.45fr; gap: 8px; padding: 0 15px 12px; }
+    .maya-id-field { min-width: 0; padding: 9px 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .maya-id-field span, .maya-id-hobbies-label { display: block; margin: 0 0 4px; color: #92959d; font-size: .55rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .maya-id-field strong { display: block; color: #f5f5f6; font-size: .72rem; font-weight: 650; line-height: 1.35; overflow-wrap: anywhere; }
+    .maya-id-hobbies { margin: 0 15px 14px; padding: 10px 11px; border-left: 2px solid #ffca05; border-radius: 0 9px 9px 0; background: rgba(255,202,5,.06); }
+    .maya-id-hobbies-label { margin-bottom: 3px; color: #ffdc56; }
+    .maya-id-hobbies p { margin: 0; color: #e4e4e7; font-size: .7rem; line-height: 1.4; }
+    .maya-cta { display: block; margin: 0 15px 9px; padding: 11px 12px; border: 0; border-radius: 11px; background: linear-gradient(105deg, #ffca05, #ffe77a); color: #171717; font-size: .72rem; font-weight: 850; text-align: center; text-decoration: none; box-shadow: 0 5px 18px rgba(255,202,5,.18); }
+    .services-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: calc(100% - 30px); min-height: 44px; margin: 0 15px 12px; padding: 0 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: linear-gradient(110deg, #292b31, #1c1e23); color: #f6f5f2; font: inherit; font-size: .72rem; font-weight: 800; text-align: left; }
+    .services-toggle .services-spark { color: #ffca05; font-size: 1rem; }
+    .services-toggle .services-arrow { color: #ffdc56; transition: transform .18s ease; }
+    .services-toggle[aria-expanded="true"] .services-arrow { transform: rotate(180deg); }
+    .services-menu { display: grid; gap: 7px; margin: 0 15px 12px; padding: 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.045); }
+    .services-menu-intro { margin: 0 0 2px; color: #aeb0b7; font-size: .63rem; line-height: 1.4; }
+    .services-menu-item { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 9px; background: rgba(255,202,5,.07); }
+    .services-menu-number { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 8px; background: #ffca05; color: #171717; font-size: .62rem; font-weight: 900; }
+    .services-menu-item strong { display: block; color: #f6f5f2; font-size: .64rem; }
+    .services-menu-item small { display: block; margin-top: 2px; color: #aeb0b7; font-size: .58rem; }
+    #hotspot-popover { position: fixed; z-index: 7; width: min(250px, calc(100vw - 32px)); padding: 13px 14px; border: 1px solid rgba(255,202,5,.42); border-radius: 15px; background: linear-gradient(145deg, rgba(27,29,34,.96), rgba(14,15,18,.95)); box-shadow: 0 12px 36px rgba(0,0,0,.42), 0 0 22px rgba(255,202,5,.12); backdrop-filter: blur(14px); pointer-events: auto; }
+    .hotspot-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .hotspot-popover-label { margin: 0; color: #ffdc56; font-size: .58rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    #hotspot-close { width: 27px; min-height: 27px; flex: 0 0 27px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: .95rem; line-height: 1; }
+    #hotspot-title { margin: 5px 0 4px; color: #fff; font-size: .84rem; line-height: 1.2; }
+    #hotspot-copy { margin: 0; color: #c9cbd1; font-size: .72rem; line-height: 1.45; }
+    .maya-music { display: grid; justify-items: center; gap: 9px; padding: 12px 15px 15px; border-top: 1px solid rgba(255,255,255,.09); }
+    .maya-music-title { margin: 0; color: #fff; font-size: .7rem; font-weight: 750; }
+    .maya-music-title span { color: #9da0a7; font-weight: 500; }
+    .maya-mute { width: auto; min-height: 36px; padding: 0 14px; border: 1px solid rgba(255,202,5,.45); border-radius: 999px; background: rgba(255,202,5,.12); color: #ffdc56; font-size: .7rem; font-weight: 800; }
+    .maya-music-status { margin: 0; color: #9699a1; font-size: .62rem; text-align: center; }
+    @media (max-width: 640px) and (hover: none), (hover: none) and (pointer: coarse) {
+      html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      .panel { display: flex; align-items: center; justify-content: center; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+      .card { width: min(100%, 468px); flex: 0 0 auto; margin: auto 0; padding: clamp(22px, 6vw, 30px); }
+      .welcome-brand { gap: 9px; margin-bottom: 22px; }
+      .welcome-mark { width: 40px; height: 40px; flex-basis: 40px; }
+      .eyebrow { font-size: 13px; }
+      .welcome-subbrand, .welcome-pill { font-size: 12px; }
+      h1 { font-size: clamp(32px, 8vw, 44px); }
+      .copy { margin: 14px 0 18px; font-size: 16px; }
+      .welcome-steps { gap: 7px; margin-bottom: 16px; }
+      .welcome-step { padding: 9px 7px; }
+      .welcome-step span, .services-menu-number { font-size: 12px; }
+      .welcome-step strong { font-size: 16px; line-height: 1.2; }
+      .welcome-start { min-height: 54px; font-size: 16px; }
+      .welcome-start-arrow { width: 44px; height: 44px; }
+      .privacy { font-size: 16px; line-height: 1.35; }
+      #scanner, #tap-hint { width: max-content; max-width: calc(100vw - 32px); white-space: normal; overflow-wrap: anywhere; font-size: 16px; line-height: 1.35; }
+      #tap-hint { bottom: max(16px, env(safe-area-inset-bottom)); }
+      #maya-card { max-height: min(560px, calc(100vh - 104px)); max-height: min(560px, calc(100dvh - 104px)); bottom: max(76px, calc(env(safe-area-inset-bottom) + 68px)); }
+      .maya-id-company { font-size: 14px; }
+      .maya-id-label, .maya-id-status, .maya-id-field span, .maya-id-hobbies-label, .hotspot-popover-label { font-size: 12px; }
+      .maya-id-name { font-size: 24px; }
+      .maya-id-role, .maya-id-field strong, .maya-id-hobbies p, .maya-cta, .services-toggle, .services-menu-intro, .services-menu-item strong, .services-menu-item small, .maya-music-title, .maya-mute, .maya-music-status, #hotspot-copy { font-size: 16px; }
+      .maya-cta { display: flex; min-height: 44px; align-items: center; justify-content: center; }
+      .services-toggle { min-height: 48px; }
+      .services-menu-number { width: 32px; height: 32px; flex-basis: 32px; }
+      .maya-mute { min-height: 44px; }
+      #hotspot-popover { width: min(280px, calc(100vw - 28px)); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; }
+      #hotspot-close { width: 44px; height: 44px; min-height: 44px; flex-basis: 44px; }
+      #hotspot-title { font-size: 18px; }
+      a, button { touch-action: manipulation; }
+      main img, main svg, main video, main iframe, main embed, #maya-card img, #maya-card svg, #maya-card video, #maya-card iframe, #maya-card embed, #hotspot-popover img, #hotspot-popover svg, #hotspot-popover video, #hotspot-popover iframe, #hotspot-popover embed { max-width: 100%; height: auto; }
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <a-scene id="ar-scene" mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: no; uiLoading: no;" color-space="sRGB" renderer="alpha: true, colorManagement: true, physicallyCorrectLights: true" xr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      <a-asset-item id="character" src="./Web_AR-Character-Combined.glb"></a-asset-item>
+    </a-assets>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+      <a-gltf-model id="avatar" src="#character" position="0 -0.25 0.04" rotation="0 0 0" scale="1 1 1" class="clickable"></a-gltf-model>
+      <a-entity class="service-hotspot" data-service="workflows" data-number="01" position="0.39 0.22 0.08" animation__pulse="property: scale; from: 1 1 1; to: 1.08 1.08 1.08; dur: 1200; dir: alternate; loop: true; easing: easeInOutSine">
+        <a-circle radius="0.105" color="#ffca05" material="shader: flat; opacity: 0.16; transparent: true; side: double"></a-circle>
+        <a-circle radius="0.078" color="#ffca05" position="0 0 0.002" material="shader: flat; side: double"></a-circle>
+        <a-circle radius="0.066" color="#17191e" position="0 0 0.004" material="shader: flat; side: double"></a-circle>
+        <a-text value="01" align="center" color="#ffe27a" position="0 0 0.012" width="0.5" scale="2 2 2" side="double"></a-text>
+      </a-entity>
+      <a-entity class="service-hotspot" data-service="leads" data-number="02" position="0.39 0 0.08" animation__pulse="property: scale; from: 1 1 1; to: 1.08 1.08 1.08; dur: 1200; dir: alternate; loop: true; easing: easeInOutSine">
+        <a-circle radius="0.105" color="#ffca05" material="shader: flat; opacity: 0.16; transparent: true; side: double"></a-circle>
+        <a-circle radius="0.078" color="#ffca05" position="0 0 0.002" material="shader: flat; side: double"></a-circle>
+        <a-circle radius="0.066" color="#17191e" position="0 0 0.004" material="shader: flat; side: double"></a-circle>
+        <a-text value="02" align="center" color="#ffe27a" position="0 0 0.012" width="0.5" scale="2 2 2" side="double"></a-text>
+      </a-entity>
+      <a-entity class="service-hotspot" data-service="ai" data-number="03" position="0.39 -0.22 0.08" animation__pulse="property: scale; from: 1 1 1; to: 1.08 1.08 1.08; dur: 1200; dir: alternate; loop: true; easing: easeInOutSine">
+        <a-circle radius="0.105" color="#ffca05" material="shader: flat; opacity: 0.16; transparent: true; side: double"></a-circle>
+        <a-circle radius="0.078" color="#ffca05" position="0 0 0.002" material="shader: flat; side: double"></a-circle>
+        <a-circle radius="0.066" color="#17191e" position="0 0 0.004" material="shader: flat; side: double"></a-circle>
+        <a-text value="03" align="center" color="#ffe27a" position="0 0 0.012" width="0.5" scale="2 2 2" side="double"></a-text>
+      </a-entity>
+    </a-entity>
+  </a-scene>
+
+  <main id="welcome" class="panel">
+    <section class="card">
+      <div class="welcome-brand">
+        <span class="welcome-mark" aria-hidden="true">H</span>
+        <div class="welcome-brand-text">
+          <p class="eyebrow">Hawk’N Tech</p>
+          <p class="welcome-subbrand">Interactive WebAR experience</p>
+        </div>
+        <span class="welcome-pill">POSTER AR</span>
+      </div>
+      <h1>Meet Maya.<br><span class="headline-accent">in AR.</span></h1>
+      <p class="copy">Point your camera at the Hawk’N poster to bring Maya to life. Tap her to dance or explore Hawk’N services.</p>
+      <div class="welcome-steps" aria-label="How it works">
+        <div class="welcome-step"><span>01</span><strong>Open camera</strong></div>
+        <div class="welcome-step"><span>02</span><strong>Find poster</strong></div>
+        <div class="welcome-step"><span>03</span><strong>Meet Maya</strong></div>
+      </div>
+      <button class="welcome-start" id="start-button" type="button"><span>Start the experience</span><span class="welcome-start-arrow" aria-hidden="true">↗</span></button>
+      <p class="privacy"><span class="privacy-dot" aria-hidden="true"></span>Camera access is used to recognize the poster in this session.</p>
+    </section>
+  </main>
+  <div id="scanner" hidden>Camera starting…</div>
+  <div id="tap-hint" hidden>Tap Maya to dance · tap 01–03 to explore services</div>
+  <aside id="maya-card" aria-label="Maya employee ID card" aria-live="polite" hidden>
+    <header class="maya-id-header">
+      <span class="maya-id-mark" aria-hidden="true">H</span>
+      <div class="maya-id-brand">
+        <p class="maya-id-company">HAWKN TECH</p>
+        <p class="maya-id-label">WEBAR TEAM PROFILE</p>
+      </div>
+      <span class="maya-id-status">TRACKED</span>
+    </header>
+    <div class="maya-id-main">
+      <div class="maya-id-avatar" aria-hidden="true">MY</div>
+      <div>
+        <h2 class="maya-id-name">Maya</h2>
+        <p class="maya-id-role">XR Developer</p>
+      </div>
+    </div>
+    <div class="maya-id-details">
+      <div class="maya-id-field"><span>Age</span><strong>22</strong></div>
+      <div class="maya-id-field"><span>College</span><strong>Presidency, Bangalore</strong></div>
+    </div>
+    <div class="maya-id-hobbies">
+      <span class="maya-id-hobbies-label">Hobbies</span>
+      <p>Creating interactive projects</p>
+    </div>
+    <a class="maya-cta" href="https://www.hawkntechnologies.com/" target="_blank" rel="noopener noreferrer">Visit Hawk’N Tech website ↗</a>
+    <button class="services-toggle" id="services-toggle" type="button" aria-expanded="false" aria-controls="services-menu">
+      <span class="services-spark" aria-hidden="true">✦</span><span>Explore our services</span><span class="services-arrow" aria-hidden="true">⌄</span>
+    </button>
+    <div class="services-menu" id="services-menu" hidden>
+      <p class="services-menu-intro">Smart systems that give your team time back.</p>
+      <div class="services-menu-item"><span class="services-menu-number">01</span><div><strong>Workflow automation</strong><small>Connect steps and reduce manual work</small></div></div>
+      <div class="services-menu-item"><span class="services-menu-number">02</span><div><strong>Sales &amp; lead automation</strong><small>Capture leads and follow up faster</small></div></div>
+      <div class="services-menu-item"><span class="services-menu-number">03</span><div><strong>AI-driven operations</strong><small>Improve decisions and spot bottlenecks</small></div></div>
+    </div>
+    <div class="maya-music">
+      <p class="maya-music-title">Maya’s soundtrack</p>
+      <audio id="maya-song" src="./Gangnam%20Style%20Audio.mp3" preload="none" loop></audio>
+      <button class="maya-mute" id="mute-song" type="button" aria-pressed="false" aria-label="Mute music">Mute</button>
+      <p class="maya-music-status" id="music-status" aria-live="polite">Tap Maya to dance with music</p>
+    </div>
+  </aside>
+  <aside id="hotspot-popover" aria-live="polite" hidden>
+    <div class="hotspot-popover-head">
+      <p class="hotspot-popover-label" id="hotspot-label"></p>
+      <button id="hotspot-close" type="button" aria-label="Close service details">×</button>
+    </div>
+    <h2 id="hotspot-title"></h2>
+    <p id="hotspot-copy"></p>
+  </aside>
+
+  <script>
+    // On desktop, request the built-in user-facing webcam. Phones use the rear camera for poster scanning.
+    const isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const nativeGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = (constraints) => {
+      if (!isPhone && constraints && constraints.video) {
+        const video = typeof constraints.video === 'object' ? constraints.video : {};
+        return nativeGetUserMedia({ ...constraints, video: { ...video, facingMode: { ideal: 'user' } } });
+      }
+      return nativeGetUserMedia(constraints);
+    };
+
+    const scene = document.querySelector('#ar-scene');
+    const clearSceneAlpha = () => {
+      if (scene.renderer) scene.renderer.setClearColor(0x000000, 0);
+    };
+    clearSceneAlpha();
+    scene.addEventListener('loaded', clearSceneAlpha);
+    scene.addEventListener('renderstart', clearSceneAlpha);
+    const welcome = document.querySelector('#welcome');
+    const startButton = document.querySelector('#start-button');
+    let sceneReady = scene.hasLoaded;
+    const startButtonMarkup = startButton.innerHTML;
+    if (!sceneReady) {
+      startButton.disabled = true;
+      startButton.setAttribute('aria-busy', 'true');
+      const startLabel = startButton.querySelector('span');
+      if (startLabel) startLabel.textContent = 'Preparing experience…';
+      scene.addEventListener('loaded', () => {
+        sceneReady = true;
+        startButton.disabled = false;
+        startButton.removeAttribute('aria-busy');
+        startButton.innerHTML = startButtonMarkup;
+      }, { once: true });
+    }
+    const scanner = document.querySelector('#scanner');
+    const tapHint = document.querySelector('#tap-hint');
+    const mayaCard = document.querySelector('#maya-card');
+    const avatar = document.querySelector('#avatar');
+    const targetAnchor = document.querySelector('#target-anchor');
+    const song = document.querySelector('#maya-song');
+    const muteSongButton = document.querySelector('#mute-song');
+    const musicStatus = document.querySelector('#music-status');
+    const hotspotPopover = document.querySelector('#hotspot-popover');
+    const hotspotLabel = document.querySelector('#hotspot-label');
+    const hotspotTitle = document.querySelector('#hotspot-title');
+    const hotspotCopy = document.querySelector('#hotspot-copy');
+    let activeHotspot = null;
+    const servicesToggle = document.querySelector('#services-toggle');
+    const servicesMenu = document.querySelector('#services-menu');
+    const serviceDescriptions = {
+      workflows: { title: 'End-to-end workflow automation', copy: 'Connect business steps, reduce repetitive tasks, and improve speed and accuracy.' },
+      leads: { title: 'Sales and lead automation', copy: 'Capture enquiries and automate follow-ups so teams can respond faster.' },
+      ai: { title: 'AI-driven operations', copy: 'Use AI workflows to support decisions and identify delays or bottlenecks.' }
+    };
+    const hideHotspotPopover = () => {
+      activeHotspot = null;
+      hotspotPopover.hidden = true;
+    };
+    document.querySelector('#hotspot-close').addEventListener('click', hideHotspotPopover);
+    const positionHotspotPopover = () => {
+      if (!activeHotspot || hotspotPopover.hidden || !scene.camera || !scene.canvas) return;
+      scene.object3D.updateMatrixWorld(true);
+      scene.camera.updateMatrixWorld(true);
+      activeHotspot.object3D.updateWorldMatrix(true, false);
+      const projected = activeHotspot.object3D.getWorldPosition(new THREE.Vector3()).project(scene.camera);
+      const canvasBounds = scene.canvas.getBoundingClientRect();
+      const anchorX = canvasBounds.left + (projected.x + 1) * canvasBounds.width / 2;
+      const anchorY = canvasBounds.top + (1 - projected.y) * canvasBounds.height / 2;
+      const panelWidth = hotspotPopover.offsetWidth || 250;
+      const panelHeight = hotspotPopover.offsetHeight || 120;
+      let left = anchorX - panelWidth - 14;
+      if (left < 8) left = anchorX + 14;
+      left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+      const top = Math.max(8, Math.min(anchorY - panelHeight / 2, window.innerHeight - panelHeight - 8));
+      hotspotPopover.style.left = `${left}px`;
+      hotspotPopover.style.top = `${top}px`;
+    };
+    AFRAME.registerComponent('hotspot-popover-anchor', { tick: positionHotspotPopover });
+    scene.setAttribute('hotspot-popover-anchor', '');
+    servicesToggle.addEventListener('click', () => {
+      servicesMenu.hidden = !servicesMenu.hidden;
+      servicesToggle.setAttribute('aria-expanded', String(!servicesMenu.hidden));
+    });
+    const playSong = (restart = false) => {
+      if (restart) song.currentTime = 0;
+      song.play().then(() => {
+        musicStatus.textContent = song.muted ? 'Music is muted' : 'Music is playing';
+      }).catch((error) => {
+        musicStatus.textContent = 'Could not load Gangnam Style Audio.mp3';
+        console.warn('Local music could not start:', error);
+      });
+    };
+    const stopSong = () => {
+      song.pause();
+      song.currentTime = 0;
+      musicStatus.textContent = 'Tap Maya to dance with music';
+    };
+    muteSongButton.addEventListener('click', () => {
+      song.muted = !song.muted;
+      muteSongButton.textContent = song.muted ? 'Unmute' : 'Mute';
+      muteSongButton.setAttribute('aria-pressed', String(song.muted));
+      muteSongButton.setAttribute('aria-label', song.muted ? 'Unmute music' : 'Mute music');
+      musicStatus.textContent = song.muted ? 'Music is muted' : (song.paused ? 'Tap Maya to dance with music' : 'Music is playing');
+    });
+    let dancing = false;
+    const tapRaycaster = new THREE.Raycaster();
+    const tapPointer = new THREE.Vector2();
+    avatar.addEventListener('model-loaded', (event) => {
+      const object = event.detail.model;
+      object.traverse((part) => {
+        if (!part.isMesh) return;
+        const materials = Array.isArray(part.material) ? part.material : [part.material];
+        materials.forEach((material) => {
+          material.transparent = false;
+          material.opacity = 1;
+          material.depthWrite = true;
+          material.needsUpdate = true;
+        });
+      });
+    });
+
+    startButton.addEventListener('click', async () => {
+      startButton.disabled = true;
+      startButton.textContent = 'Starting camera…';
+      scanner.textContent = 'Starting camera and AR tracker…';
+      scanner.hidden = false;
+      try {
+        await scene.systems['mindar-image-system'].start();
+        clearSceneAlpha();
+        welcome.hidden = true;
+        scanner.hidden = false;
+      } catch (error) {
+        startButton.disabled = false;
+        startButton.textContent = 'Try again';
+        document.querySelector('.copy').textContent = 'Check the error message above. Allow camera access, use a supported browser, and reload to retry.';
+        scanner.textContent = 'AR startup failed: ' + (error && (error.message || String(error)) || 'unknown error');
+        scanner.hidden = false;
+        console.error('MindAR start() failed:', error);
+      }
+    });
+
+    targetAnchor.addEventListener('targetFound', () => {
+      scanner.textContent = 'Poster found — enjoy the animation';
+      tapHint.hidden = false;
+      mayaCard.hidden = false;
+      dancing = false;
+      avatar.setAttribute('animation-mixer', 'clip: Idle; loop: repeat; timeScale: 1');
+    });
+    targetAnchor.addEventListener('targetLost', () => {
+      scanner.textContent = 'Point your camera at the poster';
+      tapHint.hidden = true;
+      mayaCard.hidden = true;
+      hideHotspotPopover();
+      dancing = false;
+      avatar.removeAttribute('animation-mixer');
+      stopSong();
+    });
+    const toggleAvatarAnimation = () => {
+      dancing = !dancing;
+      const clip = dancing ? 'Gangnam Style' : 'Idle';
+      avatar.setAttribute('animation-mixer', `clip: ${clip}; loop: repeat; crossFadeDuration: 0.25; timeScale: 1`);
+      if (dancing) playSong(true);
+      else stopSong();
+      tapHint.textContent = dancing ? 'Tap Maya for idle · tap 01–03 to explore services' : 'Tap Maya to dance · tap 01–03 to explore services';
+    };
+
+    const installTapInput = () => {
+      const canvas = scene.canvas;
+      if (!canvas) return false;
+      canvas.style.touchAction = 'none';
+      canvas.addEventListener('pointerdown', (event) => {
+        if (event.isPrimary === false || event.button > 0 || !scene.camera || !avatar.getObject3D('mesh')) return;
+        const bounds = canvas.getBoundingClientRect();
+        tapPointer.set(
+          ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+          -((event.clientY - bounds.top) / bounds.height) * 2 + 1
+        );
+        scene.camera.updateMatrixWorld(true);
+        avatar.object3D.updateMatrixWorld(true);
+        tapRaycaster.setFromCamera(tapPointer, scene.camera);
+        const hotspot = [...document.querySelectorAll('.service-hotspot')].find((entity) => tapRaycaster.intersectObject(entity.object3D, true).length > 0);
+        if (hotspot) {
+          const details = serviceDescriptions[hotspot.dataset.service];
+          if (details) {
+            activeHotspot = hotspot;
+            hotspotLabel.textContent = `SERVICE ${hotspot.dataset.number}`;
+            hotspotTitle.textContent = details.title;
+            hotspotCopy.textContent = details.copy;
+            hotspotPopover.hidden = false;
+            positionHotspotPopover();
+          }
+          event.preventDefault();
+          return;
+        }
+        if (!tapRaycaster.intersectObject(avatar.object3D, true).length) return;
+        event.preventDefault();
+        hideHotspotPopover();
+        toggleAvatarAnimation();
+        avatar.removeAttribute('animation__tap');
+        avatar.setAttribute('animation__tap', 'property: scale; from: 1 1 1; to: 1.08 1.08 1.08; dur: 130; dir: alternate; loop: 2; easing: easeOutQuad');
+      }, { passive: false });
+      return true;
+    };
+    if (!installTapInput()) scene.addEventListener('renderstart', installTapInput, { once: true });
+    scene.addEventListener('arReady', () => {
+      scanner.textContent = 'Point your camera at the poster';
+    });
+    scene.addEventListener('arError', (event) => {
+      const detail = event.detail || {};
+      const reason = detail.error || detail.message || JSON.stringify(detail) || 'unknown error';
+      scanner.textContent = 'AR startup failed: ' + reason;
+      scanner.hidden = false;
+      console.error('MindAR arError:', detail);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
