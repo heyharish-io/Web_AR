@@ -1,4 +1,4 @@
-WEBAR PROTOTYPE — HAWKN TECH CONCEPT
+WEBAR PROTOTYPE 
 
 Files expected in this folder:
 - index.html
